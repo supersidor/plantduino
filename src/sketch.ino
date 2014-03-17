@@ -1,4 +1,10 @@
 #include "OneWire.h"
+
+//light 
+int lightPIN = 3;
+
+
+
 int oneWirePIN = 2;
 float boardTemp = 0.0;
 
@@ -9,7 +15,10 @@ OneWire  dsOneWire(oneWirePIN);
 
 void setup() {
   Serial.begin(9600);
-  
+  //light
+  pinMode(lightPIN,OUTPUT);
+  digitalWrite(lightPIN,HIGH);
+ 
 }
 void serialSensor(const char* name,float value){
   Serial.print("sensor:");
@@ -18,9 +27,15 @@ void serialSensor(const char* name,float value){
   Serial.println(value);
 }
 void loop(){
-   boardTemp = getTemperature(onBoardSensorAddress);
+  /*boardTemp = getTemperature(onBoardSensorAddress);
    serialSensor("air_temp",boardTemp);
    delay(60000);
+  */
+  digitalWrite(lightPIN,LOW);
+  delay(5000);
+  digitalWrite(lightPIN,HIGH);
+  delay(5000);
+
 }
 /////////////////////////////
 float getTemperature(byte address[]){
