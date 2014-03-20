@@ -1,17 +1,18 @@
 #include "OneWire.h"
+#include "dht.h"
 
 //light 
 int lightPIN = 3;
 
-
-
 int oneWirePIN = 2;
 float boardTemp = 0.0;
 
-
-
 byte onBoardSensorAddress[] = {0x28,0xA4,0x8D,0xBE,0x03,0,0,0xD9};
 OneWire  dsOneWire(oneWirePIN);
+
+int pinDHT11 = 7;
+float humidity = 0.0;
+dht DHT;
 
 void setup() {
   Serial.begin(9600);
@@ -27,14 +28,46 @@ void serialSensor(const char* name,float value){
   Serial.println(value);
 }
 void loop(){
-  /*boardTemp = getTemperature(onBoardSensorAddress);
+   boardTemp = getTemperature(onBoardSensorAddress);
    serialSensor("air_temp",boardTemp);
-   delay(60000);
-  */
-  digitalWrite(lightPIN,LOW);
+
+ // READ DATA
+  int chk = DHT.read22(pinDHT11);
+  switch (chk)
+  {
+    case DHTLIB_OK:  
+      //Serial.print("OK,\t"); 
+    break;
+    case DHTLIB_ERROR_CHECKSUM: 
+      //Serial.print("Checksum error,\t"); 
+    break;
+    case DHTLIB_ERROR_TIMEOUT: 
+      //Serial.print("Time out error,\t"); 
+    break;
+    default: 
+      //Serial.print("Unknown error,\t"); 
+    break;
+  }
+  // DISPLAY DATA
+  //Serial.print(DHT.humidity, 1);
+  //Serial.print(",\t");
+  //Serial.println(DHT.temperature, 1);
+
+
+
+   if (chk==DHTLIB_OK){
+     humidity = DHT.humidity;
+     serialSensor("humidity",humidity); 
+   }
+
+
+   delay(5000);
+  
+  /*digitalWrite(lightPIN,LOW);
   delay(5000);
   digitalWrite(lightPIN,HIGH);
-  delay(5000);
+  delay(5000);*/
+
 
 }
 /////////////////////////////
