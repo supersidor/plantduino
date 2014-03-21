@@ -5,6 +5,8 @@ import sys
 
 import time
 from threading import Thread
+from threading import RLock
+
 def cosmLoop(plant):
 	while True:
 		try:
@@ -36,32 +38,48 @@ class Plant:
     def __init__(self,device):
         self.conn = None;
         self.device = device;
+	self.lock = RLock()
+    def sendCommand(self,command):
+        with self.lock:
+		return self._sendCommand(command)
+    def _sendCommand(self,command):
+        conn = self.getConn()
+        conn.write(command+"\n")	    
+	conn.flush()
+	result = []
+	while True:
+		line = conn.readline()
+		line = line.rstrip()
+		if len(line)==0:
+			break
+		result.append(line)
+	return result
     def close(self):
         if self.conn:
             self.conn.close()
     def getConn(self):
         if not self.conn:
-            print sys.argv[1]
+            print "Connecting to "+self.device
             self.conn = serial.Serial(self.device, 9600)
             print self.conn.readline(),
-
         return self.conn;
     def getSensors(self):
-        conn = self.getConn()
-        conn.write("state\n")
-        conn.flush()
-        while True:
-            print conn.readline(),
-        return {'air_temp':20,'humidity':30}
+	cmd_result = self.sendCommand("state")
+	result = {}
+	for line in cmd_result:
+		parts = line.split(':')
+		result[parts[0]] = float(parts[1]) 
+        return result
 plant = Plant(sys.argv[1])
-#server = SimpleXMLRPCServer(("0.0.0.0", 8000))
-#server.register_instance(plant)
-#thread = Thread(target = cosmLoop, args = (plant, ))
-#thread.daemon = True
-#thread.start()
-#print "Server started"
-#server.serve_forever()
+server = SimpleXMLRPCServer(("0.0.0.0", 8000))
+server.register_instance(plant)
+thread = Thread(target = cosmLoop, args = (plant, ))
+thread.daemon = True
+thread.start()
+print "Server started"
 print plant.getSensors()
+server.serve_forever()
+
 
 
 

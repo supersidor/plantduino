@@ -70,7 +70,7 @@ void setup() {
   pinMode(lightPIN,OUTPUT);
   digitalWrite(lightPIN,HIGH);
  
-   Serial.println("Arduino initialized");
+  Serial.println("Arduino initialized");
 }
 void print2digits(int number) {
   if (number >= 0 && number < 10) {
@@ -106,9 +106,6 @@ void loop(){
           run->lastRun = millis();
        }
    }
-
-
-
 
 
 /*
