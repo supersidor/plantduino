@@ -2,7 +2,7 @@
 #include <dht.h>
 #include <DS1307RTC.h>
 #include <Time.h>
-
+#include <Wire.h>
 typedef void (* IntervalFuncPtr) ();
 
 typedef struct
@@ -57,18 +57,103 @@ void humidityUpdate(){
      humidity = DHT.humidity;
    }
 }
+float illumination = 0.0 ;
+ byte buff[2];
+ int BH1750address = 0x23; 
+
+int BH1750_Read(int address) //
+
+{
+
+  int i=0;
+
+  Wire.beginTransmission(address);
+
+  Wire.requestFrom(address, 2);
+
+  while(Wire.available()) //
+
+  {
+
+    buff[i] = Wire.read();  // receive one byte
+
+    i++;
+
+  }
+
+  Wire.endTransmission();  
+
+  return i;
+
+}
 
 
-interval_run_type interval_run[2] = {
+
+
+void BH1750_Init(int address) 
+
+{
+
+  Wire.beginTransmission(address);
+
+  Wire.write(0x10);//1lx reolution 120ms
+
+  Wire.endTransmission();
+
+}
+
+void illuminationUpdate(){
+int i;
+
+ uint16_t val=0;
+
+ BH1750_Init(BH1750address);
+
+ delay(200);
+
+ if(2==BH1750_Read(BH1750address))
+
+  {
+
+   val=((buff[0]<<8)|buff[1])/1.2;
+   illumination = val;
+   //Serial.print(val,DEC);     
+   //Serial.println("[lx]"); 
+
+  }
+  /*  
+ Serial.println("illuminationUpdate");
+ int BH1750address = 0x23; 
+ int i;
+ uint16_t val=0;
+ Wire.beginTransmission(BH1750address);
+ Wire.write(0x10);//1lx reolution 120ms
+ Wire.endTransmission(); 
+ delay(200);
+ if(2==BH1750_Read(BH1750address))
+ {
+   val=((buff_ill[0]<<8)|buff_ill[1])/1.2;
+   Serial.println(val);
+   illumination = (float)val;     
+   Serial.println(illumination);
+
+  }*/
+
+}
+
+interval_run_type interval_run[3] = {
    {0,10000,temperatureUpdate},
-   {0,5000,humidityUpdate}
+   {0,10000,humidityUpdate},
+   {0,5000,illuminationUpdate}
 };
 
 void setup() {
   Serial.begin(9600);
+  Wire.begin();
   //light
   pinMode(lightPIN,OUTPUT);
   digitalWrite(lightPIN,HIGH);
+
  
   Serial.println("Arduino initialized");
 }
@@ -86,17 +171,6 @@ void serialSensor(const char* name,float value){
 char command[10];
 void loop(){
    tmElements_t tm;
-   if (Serial.available()){
-      /*while (Serial.available())
-         Serial.println(Serial.read());*/
-      byte read = Serial.readBytesUntil('\n',command,sizeof(command));
-      command[read] = '\0';
-      if (strcmp(command,"state")==0){
-         serialSensor("air_temp",boardTemp);
-         serialSensor("humidity",humidity); 
-         Serial.println();
-      }
-   }
 
    int incomingByte;
    for (int i=0;i<sizeof(interval_run)/sizeof(interval_run_type);i++){
@@ -105,7 +179,21 @@ void loop(){
           run->func();
           run->lastRun = millis();
        }
+   }   
+   if (Serial.available()){
+      /*while (Serial.available())
+         Serial.println(Serial.read());*/
+      byte read = Serial.readBytesUntil('\n',command,sizeof(command));
+      command[read] = '\0';
+      if (strcmp(command,"state")==0){
+         serialSensor("air_temp",boardTemp);
+         serialSensor("humidity",humidity); 
+         serialSensor("illumination",illumination); 
+         Serial.println();
+      }
    }
+
+
 
 
 /*
