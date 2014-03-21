@@ -1,5 +1,8 @@
 from SimpleXMLRPCServer import SimpleXMLRPCServer
 import httplib, urllib
+import serial
+import sys
+
 import time
 from threading import Thread
 def cosmLoop(plant):
@@ -30,17 +33,35 @@ def sendToCosm(sensors):
     conn.close()
 
 class Plant:
-    def getSensors(self):
-        return {'air_temp':20,'humidity':30}
+    def __init__(self,device):
+        self.conn = None;
+        self.device = device;
+    def close(self):
+        if self.conn:
+            self.conn.close()
+    def getConn(self):
+        if not self.conn:
+            print sys.argv[1]
+            self.conn = serial.Serial(self.device, 9600)
+            print self.conn.readline(),
 
-plant = Plant()
-server = SimpleXMLRPCServer(("0.0.0.0", 8000))
-server.register_instance(plant)
-thread = Thread(target = cosmLoop, args = (plant, ))
-thread.daemon = True
-thread.start()
-print "Server started"
-server.serve_forever()
+        return self.conn;
+    def getSensors(self):
+        conn = self.getConn()
+        conn.write("state\n")
+        conn.flush()
+        while True:
+            print conn.readline(),
+        return {'air_temp':20,'humidity':30}
+plant = Plant(sys.argv[1])
+#server = SimpleXMLRPCServer(("0.0.0.0", 8000))
+#server.register_instance(plant)
+#thread = Thread(target = cosmLoop, args = (plant, ))
+#thread.daemon = True
+#thread.start()
+#print "Server started"
+#server.serve_forever()
+print plant.getSensors()
 
 
 

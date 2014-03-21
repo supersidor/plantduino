@@ -1,37 +1,35 @@
-#include "OneWire.h"
-#include "dht.h"
+#include <OneWire.h>
+#include <dht.h>
+#include <DS1307RTC.h>
+#include <Time.h>
+
+typedef void (* IntervalFuncPtr) ();
+
+typedef struct
+{
+      unsigned long lastRun;
+      unsigned long interval;
+      IntervalFuncPtr func;
+}  interval_run_type;
+
+
 
 //light 
 int lightPIN = 3;
 
 int oneWirePIN = 2;
 float boardTemp = 0.0;
-
 byte onBoardSensorAddress[] = {0x28,0xA4,0x8D,0xBE,0x03,0,0,0xD9};
 OneWire  dsOneWire(oneWirePIN);
 
+void temperatureUpdate(){
+   boardTemp = getTemperature(onBoardSensorAddress);
+}
 int pinDHT11 = 7;
 float humidity = 0.0;
 dht DHT;
 
-void setup() {
-  Serial.begin(9600);
-  //light
-  pinMode(lightPIN,OUTPUT);
-  digitalWrite(lightPIN,HIGH);
- 
-}
-void serialSensor(const char* name,float value){
-  Serial.print("sensor:");
-  Serial.print(name);
-  Serial.print(":");
-  Serial.println(value);
-}
-void loop(){
-   boardTemp = getTemperature(onBoardSensorAddress);
-   serialSensor("air_temp",boardTemp);
-
- // READ DATA
+void humidityUpdate(){
   int chk = DHT.read22(pinDHT11);
   switch (chk)
   {
@@ -57,11 +55,95 @@ void loop(){
 
    if (chk==DHTLIB_OK){
      humidity = DHT.humidity;
-     serialSensor("humidity",humidity); 
+   }
+}
+
+
+interval_run_type interval_run[2] = {
+   {0,10000,temperatureUpdate},
+   {0,5000,humidityUpdate}
+};
+
+void setup() {
+  Serial.begin(9600);
+  //light
+  pinMode(lightPIN,OUTPUT);
+  digitalWrite(lightPIN,HIGH);
+ 
+   Serial.println("Arduino initialized");
+}
+void print2digits(int number) {
+  if (number >= 0 && number < 10) {
+    Serial.write('0');
+  }
+  Serial.print(number);
+}
+void serialSensor(const char* name,float value){
+  Serial.print(name);
+  Serial.print(":");
+  Serial.println(value);
+}
+char command[10];
+void loop(){
+   tmElements_t tm;
+   if (Serial.available()){
+      /*while (Serial.available())
+         Serial.println(Serial.read());*/
+      byte read = Serial.readBytesUntil('\n',command,sizeof(command));
+      command[read] = '\0';
+      if (strcmp(command,"state")==0){
+         serialSensor("air_temp",boardTemp);
+         serialSensor("humidity",humidity); 
+         Serial.println();
+      }
+   }
+
+   int incomingByte;
+   for (int i=0;i<sizeof(interval_run)/sizeof(interval_run_type);i++){
+       interval_run_type* run = &interval_run[i];
+       if (run->lastRun==0 || ( millis() - run->lastRun  > run-> interval) ){
+          run->func();
+          run->lastRun = millis();
+       }
    }
 
 
+
+
+
+/*
+ // READ DATA
+
+  if (RTC.read(tm)) {
+    Serial.print("Ok, Time = ");
+    print2digits(tm.Hour);
+    Serial.write(':');
+    print2digits(tm.Minute);
+    Serial.write(':');
+    print2digits(tm.Second);
+    Serial.print(", Date (D/M/Y) = ");
+    Serial.print(tm.Day);
+    Serial.write('/');
+    Serial.print(tm.Month);
+    Serial.write('/');
+    Serial.print(tmYearToCalendar(tm.Year));
+    Serial.println();
+  } else {
+    if (RTC.chipPresent()) {
+      Serial.println("The DS1307 is stopped.  Please run the SetTime");
+      Serial.println("example to initialize the time and begin running.");
+      Serial.println();
+    } else {
+      Serial.println("DS1307 read error!  Please check the circuitry.");
+      Serial.println();
+    }
+    delay(9000);
+  }
+  delay(1000);
+
+
    delay(5000);
+  */
   
   /*digitalWrite(lightPIN,LOW);
   delay(5000);
