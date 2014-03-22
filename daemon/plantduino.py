@@ -84,13 +84,13 @@ class Plant:
         self.sendCommand("reset_light")
 
 plant = Plant(sys.argv[1])
-server = SimpleXMLRPCServer(("0.0.0.0", 8000))
+server = SimpleXMLRPCServer(("0.0.0.0", 8000),allow_none=True)
 server.register_instance(plant)
 print "Server started"
 print "time:"+plant.getTime().strftime('%Y-%m-%d %H:%M:%S')
-plant.setLight(True)
-time.sleep(5)
-plant.resetLight()
+#plant.setLight(True)
+#time.sleep(5)
+#plant.resetLight()
 print plant.getSensors()
 
 thread = Thread(target = cosmLoop, args = (plant, ))
