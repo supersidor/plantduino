@@ -1,3 +1,3 @@
 import xmlrpclib
-s = xmlrpclib.ServerProxy('http://localhost:8000')
+s = xmlrpclib.ServerProxy('http://192.168.1.205:8000')
 print s.getSensors()

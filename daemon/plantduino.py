@@ -2,6 +2,7 @@ from SimpleXMLRPCServer import SimpleXMLRPCServer
 import httplib, urllib
 import serial
 import sys
+import datetime
 
 import time
 from threading import Thread
@@ -39,12 +40,14 @@ class Plant:
         self.conn = None;
         self.device = device;
 	self.lock = RLock()
-    def sendCommand(self,command):
+    def sendCommand(self,command,*arg):
         with self.lock:
-		return self._sendCommand(command)
-    def _sendCommand(self,command):
+		return self._sendCommand(command,*arg)
+    def _sendCommand(self,command,*arg):
         conn = self.getConn()
-        conn.write(command+"\n")	    
+        conn.write(command+"\n")	
+        for a in arg:
+            conn.write(a+"\n")    
 	conn.flush()
 	result = []
 	while True:
@@ -64,20 +67,36 @@ class Plant:
             print self.conn.readline(),
         return self.conn;
     def getSensors(self):
-	cmd_result = self.sendCommand("state")
-	result = {}
-	for line in cmd_result:
-		parts = line.split(':')
-		result[parts[0]] = float(parts[1]) 
+    	cmd_result = self.sendCommand("state")
+    	result = {}
+    	for line in cmd_result:
+    		parts = line.split(':')
+    		result[parts[0]] = float(parts[1]) 
         return result
+    def getTime(self):
+        cmd_result = self.sendCommand("get_time")
+        result = {}
+        stime = cmd_result[0];
+        return datetime.datetime.utcfromtimestamp(int(stime))
+    def setLight(self,newState):
+        self.sendCommand("light","1" if newState else "0")
+    def resetLight(self):
+        self.sendCommand("reset_light")
+
 plant = Plant(sys.argv[1])
 server = SimpleXMLRPCServer(("0.0.0.0", 8000))
 server.register_instance(plant)
+print "Server started"
+print "time:"+plant.getTime().strftime('%Y-%m-%d %H:%M:%S')
+plant.setLight(True)
+time.sleep(5)
+plant.resetLight()
+print plant.getSensors()
+
 thread = Thread(target = cosmLoop, args = (plant, ))
 thread.daemon = True
 thread.start()
-print "Server started"
-print plant.getSensors()
+
 server.serve_forever()
 
 

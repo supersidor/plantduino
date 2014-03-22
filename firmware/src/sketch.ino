@@ -4,6 +4,7 @@
 #include <Time.h>
 #include <Wire.h>
 typedef void (* IntervalFuncPtr) ();
+typedef void (* CommandFuncPtr) ();
 
 typedef struct
 {
@@ -12,6 +13,11 @@ typedef struct
       IntervalFuncPtr func;
 }  interval_run_type;
 
+typedef struct
+{
+     const char* name;
+     CommandFuncPtr func;
+} command_type;
 
 
 //light 
@@ -62,89 +68,148 @@ float illumination = 0.0 ;
  int BH1750address = 0x23; 
 
 int BH1750_Read(int address) //
-
 {
-
   int i=0;
-
   Wire.beginTransmission(address);
-
   Wire.requestFrom(address, 2);
-
   while(Wire.available()) //
-
   {
-
     buff[i] = Wire.read();  // receive one byte
-
     i++;
-
   }
-
   Wire.endTransmission();  
-
   return i;
-
 }
-
-
-
-
 void BH1750_Init(int address) 
-
 {
-
   Wire.beginTransmission(address);
-
   Wire.write(0x10);//1lx reolution 120ms
-
   Wire.endTransmission();
-
 }
 
 void illuminationUpdate(){
-int i;
+  int i;
+  uint16_t val=0;
+  BH1750_Init(BH1750address);
 
- uint16_t val=0;
-
- BH1750_Init(BH1750address);
-
- delay(200);
+  delay(200);
 
  if(2==BH1750_Read(BH1750address))
-
   {
-
    val=((buff[0]<<8)|buff[1])/1.2;
    illumination = val;
    //Serial.print(val,DEC);     
    //Serial.println("[lx]"); 
-
   }
-  /*  
- Serial.println("illuminationUpdate");
- int BH1750address = 0x23; 
- int i;
- uint16_t val=0;
- Wire.beginTransmission(BH1750address);
- Wire.write(0x10);//1lx reolution 120ms
- Wire.endTransmission(); 
- delay(200);
- if(2==BH1750_Read(BH1750address))
- {
-   val=((buff_ill[0]<<8)|buff_ill[1])/1.2;
-   Serial.println(val);
-   illumination = (float)val;     
-   Serial.println(illumination);
+}
+const int startLightHour = 8;
+const int stopLightHour = 22;
 
-  }*/
+boolean bLight = false;
+
+boolean bForceLight = false;
+boolean bForceLightState = false;
+boolean bExpectedState = false;
+
+void lightUpdate(){
+    //return;
+/*    
+     Serial.println("lightUpdate");
+     Serial.print("bLight:");Serial.println(bLight);
+     Serial.print("bExpectedState:");Serial.println(bExpectedState);
+     Serial.print("bForceLight:");Serial.println(bForceLight);
+     Serial.print("bForceLightState:");Serial.println(bForceLightState);
+*/
+     boolean bNewLight = false;
+     boolean bNewExpectedState =  (hour()>=startLightHour && hour()<stopLightHour);
+     //Serial.print("2bNewExpectedState:");Serial.println(bNewExpectedState);
+
+     if (bNewExpectedState!=bExpectedState){
+         Serial.print("reset");
+         bForceLight = false;
+         bForceLightState = false;
+         bNewLight = bExpectedState = bNewExpectedState;
+     }else{
+        bNewLight = bExpectedState;
+     }
+     /*Serial.print("3bLight:");Serial.println(bLight);
+     Serial.print("3bExpectedState:");Serial.println(bExpectedState);
+     Serial.print("3bForceLight:");Serial.println(bForceLight);
+     Serial.print("3bForceLightState:");Serial.println(bForceLightState);
+     */
+
+
+     if (bForceLight){
+         bNewLight = bForceLightState;
+     }
+     if (bNewLight!=bLight){
+        bLight = bNewLight;
+        digitalWrite(lightPIN,bLight?LOW:HIGH);
+     }
+     //Serial.print("4bLight:");Serial.println(bLight);
 
 }
+// commands
+void stateCommand(){
+         serialSensor("air_temp",boardTemp);
+         serialSensor("humidity",humidity); 
+         serialSensor("illumination",illumination); 
+         serialSensor("light",bLight?1:0); 
+         serialSensor("force_light",bForceLight?1:0); 
+         serialSensor("force_light_state",bForceLightState?1:0); 
 
-interval_run_type interval_run[3] = {
+         Serial.println();
+}
+void getTimeCommand(){
+   tmElements_t tm;
+
+   time_t time_now =  now();
+   Serial.println(time_now);
+   breakTime(time_now,tm);
+    print2digits(tm.Hour);
+    Serial.write(':');
+    print2digits(tm.Minute);
+    Serial.write(':');
+    print2digits(tm.Second);
+    Serial.print(", Date (D/M/Y) = ");
+    Serial.print(tm.Day);
+    Serial.write('/');
+    Serial.print(tm.Month);
+    Serial.write('/');
+    Serial.print(tmYearToCalendar(tm.Year));
+    Serial.println();
+
+   Serial.println();
+}
+void readSerialLine(char* line,int length){
+      while (!Serial.available());
+      byte read = Serial.readBytesUntil('\n',line,length-1);
+      line[read] = '\0';
+}
+void setLightCommand(){
+      char light_state[3];
+      readSerialLine(light_state,sizeof(light_state));
+      bForceLight = true;
+      bForceLightState = (strcmp(light_state,"1")==0);
+      Serial.println();
+}
+void setResetLightCommand(){
+      bForceLight = false;
+      Serial.println();
+}
+interval_run_type interval_run[4] = {
    {0,10000,temperatureUpdate},
    {0,10000,humidityUpdate},
-   {0,5000,illuminationUpdate}
+   {0,5000,illuminationUpdate},
+   {0,500,lightUpdate}
+};
+
+command_type commands[4] = {
+   {"state",stateCommand},
+   {"get_time",getTimeCommand},   
+   {"light",setLightCommand},
+   {"reset_light",setResetLightCommand}
+
 };
 
 void setup() {
@@ -154,6 +219,8 @@ void setup() {
   pinMode(lightPIN,OUTPUT);
   digitalWrite(lightPIN,HIGH);
 
+  setSyncProvider(RTC.get);   // the function to get the time from the RTC
+  setSyncInterval(60);
  
   Serial.println("Arduino initialized");
 }
@@ -168,9 +235,8 @@ void serialSensor(const char* name,float value){
   Serial.print(":");
   Serial.println(value);
 }
-char command[10];
+char command[20];
 void loop(){
-   tmElements_t tm;
 
    int incomingByte;
    for (int i=0;i<sizeof(interval_run)/sizeof(interval_run_type);i++){
@@ -185,34 +251,23 @@ void loop(){
          Serial.println(Serial.read());*/
       byte read = Serial.readBytesUntil('\n',command,sizeof(command));
       command[read] = '\0';
-      if (strcmp(command,"state")==0){
-         serialSensor("air_temp",boardTemp);
-         serialSensor("humidity",humidity); 
-         serialSensor("illumination",illumination); 
-         Serial.println();
-      }
+      for (int i=0;i<sizeof(commands)/sizeof(command_type);i++){
+          command_type* cmd = &commands[i];
+          if (strcmp(cmd->name,command)==0){
+              cmd->func();
+          }
+
+        }
    }
 
 
 
 
-/*
+
  // READ DATA
 
-  if (RTC.read(tm)) {
+  /*if (RTC.read(tm)) {
     Serial.print("Ok, Time = ");
-    print2digits(tm.Hour);
-    Serial.write(':');
-    print2digits(tm.Minute);
-    Serial.write(':');
-    print2digits(tm.Second);
-    Serial.print(", Date (D/M/Y) = ");
-    Serial.print(tm.Day);
-    Serial.write('/');
-    Serial.print(tm.Month);
-    Serial.write('/');
-    Serial.print(tmYearToCalendar(tm.Year));
-    Serial.println();
   } else {
     if (RTC.chipPresent()) {
       Serial.println("The DS1307 is stopped.  Please run the SetTime");
@@ -223,12 +278,9 @@ void loop(){
       Serial.println();
     }
     delay(9000);
-  }
-  delay(1000);
-
-
-   delay(5000);
-  */
+  }*/
+  //Serial.println(RTC.get());
+  //delay(1000);
   
   /*digitalWrite(lightPIN,LOW);
   delay(5000);
