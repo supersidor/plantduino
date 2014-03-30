@@ -164,6 +164,26 @@ void stateCommand(){
 
          Serial.println();
 }
+#define TIME_MSG_LEN  11   // time sync to PC is HEADER followed by unix time_t as ten ascii digits
+
+void setTimeCommand(){
+    char timec[TIME_MSG_LEN+1];
+    readSerialLine(timec,sizeof(timec));
+    time_t pctime = 0;
+    tmElements_t tm;
+    for(int i=0; i < TIME_MSG_LEN -1; i++){   
+      char c = timec[i];          
+      if( c >= '0' && c <= '9'){   
+	pctime = (10 * pctime) + (c - '0') ; // convert digits to a number    
+      }
+    }   
+    breakTime(pctime,tm);
+    RTC.write(tm);   
+    setTime(RTC.get());   
+    Serial.println();
+
+
+}
 void getTimeCommand(){
    tmElements_t tm;
 
@@ -208,9 +228,10 @@ interval_run_type interval_run[4] = {
    {0,500,lightUpdate}
 };
 
-command_type commands[4] = {
+command_type commands[5] = {
    {"state",stateCommand},
    {"get_time",getTimeCommand},   
+   {"set_time",setTimeCommand},
    {"light",setLightCommand},
    {"reset_light",setResetLightCommand}
 

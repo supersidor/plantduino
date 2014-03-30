@@ -1,3 +1,4 @@
+#!/usr/bin/python
 from SimpleXMLRPCServer import SimpleXMLRPCServer
 import httplib, urllib
 import serial
@@ -80,6 +81,8 @@ class Plant:
         result = {}
         stime = cmd_result[0];
         return datetime.datetime.utcfromtimestamp(int(stime))
+    def syncTime(self):
+        self.sendCommand("set_time","%d" % (time.time()+3*60*60))
     def getLight(self):
 	    sensors = self.getSensors()
 	    return sensors['light']!=0.0
@@ -93,7 +96,6 @@ server = SimpleXMLRPCServer(("0.0.0.0", 8000),allow_none=True)
 server.register_instance(plant)
 print "Server started"
 print "time:"+plant.getTime().strftime('%Y-%m-%d %H:%M:%S')
-#plant.setLight(True)
 #time.sleep(5)
 #plant.resetLight()
 print plant.getSensors()
