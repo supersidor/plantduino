@@ -3,6 +3,7 @@
 #include <DS1307RTC.h>
 #include <Time.h>
 #include <Wire.h>
+
 typedef void (* IntervalFuncPtr) ();
 typedef void (* CommandFuncPtr) ();
 
@@ -33,6 +34,7 @@ void temperatureUpdate(){
 }
 int pinDHT11 = 7;
 float humidity = 0.0;
+float temperature = 0.0;
 dht DHT;
 
 void humidityUpdate(){
@@ -61,6 +63,7 @@ void humidityUpdate(){
 
    if (chk==DHTLIB_OK){
      humidity = DHT.humidity;
+     temperature = DHT.temperature;
    }
 }
 float illumination = 0.0 ;
@@ -102,7 +105,7 @@ void illuminationUpdate(){
    //Serial.println("[lx]"); 
   }
 }
-const int startLightHour = 8;
+const int startLightHour = 7;
 const int stopLightHour = 22;
 
 boolean bLight = false;
@@ -151,7 +154,8 @@ void lightUpdate(){
 }
 // commands
 void stateCommand(){
-         serialSensor("air_temp",boardTemp);
+         serialSensor("air_temp",temperature);
+	 serialSensor("temp_board",boardTemp);
          serialSensor("humidity",humidity); 
          serialSensor("illumination",illumination); 
          serialSensor("light",bLight?1:0); 

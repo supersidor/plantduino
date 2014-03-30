@@ -11,7 +11,9 @@ from threading import RLock
 def cosmLoop(plant):
 	while True:
 		try:
-			sendToCosm(plant.getSensors())
+			sensors = plant.getSensors()
+			print sensors
+			sendToCosm(sensors)
 		except Exception as inst:
 			print inst			
  		time.sleep(60)
@@ -78,6 +80,9 @@ class Plant:
         result = {}
         stime = cmd_result[0];
         return datetime.datetime.utcfromtimestamp(int(stime))
+    def getLight(self):
+	    sensors = self.getSensors()
+	    return sensors['light']!=0.0
     def setLight(self,newState):
         self.sendCommand("light","1" if newState else "0")
     def resetLight(self):
