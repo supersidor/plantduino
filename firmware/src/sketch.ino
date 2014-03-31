@@ -128,7 +128,6 @@ void lightUpdate(){
      //Serial.print("2bNewExpectedState:");Serial.println(bNewExpectedState);
 
      if (bNewExpectedState!=bExpectedState){
-         Serial.print("reset");
          bForceLight = false;
          bForceLightState = false;
          bNewLight = bExpectedState = bNewExpectedState;
