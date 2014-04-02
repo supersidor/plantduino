@@ -13,7 +13,7 @@ def cosmLoop(plant):
 	while True:
 		try:
 			sensors = plant.getSensors()
-			print sensors
+#			print sensors
 			sendToCosm(sensors)
 		except Exception as inst:
 			print inst			
@@ -31,7 +31,7 @@ def sendToCosm(sensors):
             request = request + ","
         if sensors.has_key(param):
             request = request + str(sensors[param])
-    print "send to cosm:",request
+#    print "send to cosm:",request
     conn.request("PUT", "/api/45931.csv",request, headers)
     response = conn.getresponse()
     print "cosm response:",response.status, response.reason
@@ -48,7 +48,9 @@ class Plant:
 		return self._sendCommand(command,*arg)
     def _sendCommand(self,command,*arg):
         conn = self.getConn()
+	print "%s: sending %s %s" % (str(datetime.datetime.now()),command,str(arg)),
         conn.write(command+"\n")	
+	print ";sent"
         for a in arg:
             conn.write(a+"\n")    
 	conn.flush()
@@ -59,6 +61,7 @@ class Plant:
 		if len(line)==0:
 			break
 		result.append(line)
+        print "%s got results: %s" % (str(datetime.datetime.now()),result)
 	return result
     def close(self):
         if self.conn:
@@ -90,6 +93,8 @@ class Plant:
         self.sendCommand("light","1" if newState else "0")
     def resetLight(self):
         self.sendCommand("reset_light")
+    def water(self):
+        self.sendCommand("water")
 
 plant = Plant(sys.argv[1])
 server = SimpleXMLRPCServer(("0.0.0.0", 8000),allow_none=True)

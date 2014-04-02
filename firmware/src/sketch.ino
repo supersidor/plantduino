@@ -23,18 +23,26 @@ typedef struct
 
 //light 
 int lightPIN = 3;
+// pump
+int pumpPIN = 4;
+int wateringTime = 5000;
 
 int oneWirePIN = 2;
 float boardTemp = 0.0;
+float soilTemp = 0.0;
 byte onBoardSensorAddress[] = {0x28,0xA4,0x8D,0xBE,0x03,0,0,0xD9};
+byte soilSensorAddress[] = {0x28,0x06,0xC5,0xA9,0x03,0,0,0x82};
+
 OneWire  dsOneWire(oneWirePIN);
 
 void temperatureUpdate(){
    boardTemp = getTemperature(onBoardSensorAddress);
+   soilTemp = getTemperature(soilSensorAddress);
 }
 int pinDHT11 = 7;
 float humidity = 0.0;
 float temperature = 0.0;
+
 dht DHT;
 
 void humidityUpdate(){
@@ -151,6 +159,24 @@ void lightUpdate(){
      //Serial.print("4bLight:");Serial.println(bLight);
 
 }
+int moisturePIN =  A0;
+int mositureVoltagePin = 8;
+float moisture = 0.0;
+
+void moistureUpdate(){
+  digitalWrite(mositureVoltagePin,HIGH);
+  delay(500);
+  analogRead(moisturePIN);
+  float iSum = 0;
+  const int probeCount = 50;
+  for (int i=0;i<probeCount;i++){
+    int sensorValue = analogRead(moisturePIN);
+    iSum = iSum + sensorValue;
+  }
+  moisture = ((iSum/probeCount)/1024.0)*100.0;
+  digitalWrite(mositureVoltagePin,LOW);
+
+}
 // commands
 void stateCommand(){
          serialSensor("air_temp",temperature);
@@ -160,6 +186,8 @@ void stateCommand(){
          serialSensor("light",bLight?1:0); 
          serialSensor("force_light",bForceLight?1:0); 
          serialSensor("force_light_state",bForceLightState?1:0); 
+	 serialSensor("soil_temp",soilTemp);
+	 serialSensor("soil_moisture",moisture);
 
          Serial.println();
 }
@@ -220,19 +248,28 @@ void setResetLightCommand(){
       bForceLight = false;
       Serial.println();
 }
-interval_run_type interval_run[4] = {
+void waterCommand(){
+  digitalWrite(pumpPIN,LOW);
+  delay(wateringTime);
+  digitalWrite(pumpPIN,HIGH);  
+  Serial.println();
+}
+
+interval_run_type interval_run[5] = {
    {0,10000,temperatureUpdate},
    {0,10000,humidityUpdate},
    {0,5000,illuminationUpdate},
-   {0,500,lightUpdate}
+   {0,500,lightUpdate},
+   {0,20000,moistureUpdate}
 };
 
-command_type commands[5] = {
+command_type commands[6] = {
    {"state",stateCommand},
    {"get_time",getTimeCommand},   
    {"set_time",setTimeCommand},
    {"light",setLightCommand},
-   {"reset_light",setResetLightCommand}
+   {"reset_light",setResetLightCommand},
+   {"water",waterCommand}
 
 };
 
@@ -243,9 +280,18 @@ void setup() {
   pinMode(lightPIN,OUTPUT);
   digitalWrite(lightPIN,HIGH);
 
+  //pump
+  pinMode(pumpPIN,OUTPUT);
+  digitalWrite(pumpPIN,HIGH);
+
   setSyncProvider(RTC.get);   // the function to get the time from the RTC
   setSyncInterval(60);
+
+  //moisture
+  pinMode(mositureVoltagePin,OUTPUT);
+  digitalWrite(mositureVoltagePin,LOW);
  
+
   Serial.println("Arduino initialized");
 }
 void print2digits(int number) {
