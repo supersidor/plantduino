@@ -242,10 +242,12 @@ void setLightCommand(){
       readSerialLine(light_state,sizeof(light_state));
       bForceLight = true;
       bForceLightState = (strcmp(light_state,"1")==0);
+      lightUpdate();
       Serial.println();
 }
 void setResetLightCommand(){
       bForceLight = false;
+      lightUpdate();
       Serial.println();
 }
 void waterCommand(){

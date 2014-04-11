@@ -8,12 +8,39 @@ import datetime
 import time
 from threading import Thread
 from threading import RLock
+import os
+import time
 
-def cosmLoop(plant):
+def sendToDb(sensors):
+	ts = int(time.time())
+	try:
+		for sensor in sensors:
+			value = sensors[sensor]
+			conn = httplib.HTTPConnection("127.0.0.1:8081")
+
+			request = "/sensor?sensor=%s&value=%s&time=%d" % (sensor,value,ts)
+			#print request
+			conn.request("GET", request)
+			response = conn.getresponse()
+
+			#print "django response:",response.status, response.reason
+			data = response.read()
+
+			conn.getresponse
+			conn.close()
+	except Exception as inst:
+		print "sendToDb:",inst
+			
+
+def sensorsLoop(plant):
+
 	while True:
+		sensors = plant.getSensors()
+                try:
+                        sendToDb(sensors)
+                except Exception as inst:
+                        print inst
 		try:
-			sensors = plant.getSensors()
-#			print sensors
 			sendToCosm(sensors)
 		except Exception as inst:
 			print inst			
@@ -105,7 +132,7 @@ print "time:"+plant.getTime().strftime('%Y-%m-%d %H:%M:%S')
 #plant.resetLight()
 print plant.getSensors()
 
-thread = Thread(target = cosmLoop, args = (plant, ))
+thread = Thread(target = sensorsLoop, args = (plant, ))
 thread.daemon = True
 thread.start()
 
