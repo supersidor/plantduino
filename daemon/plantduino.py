@@ -58,7 +58,7 @@ def sendToCosm(sensors):
             request = request + ","
         if sensors.has_key(param):
             request = request + str(sensors[param])
-#    print "send to cosm:",request
+    print "send to cosm:",request
     conn.request("PUT", "/api/45931.csv",request, headers)
     response = conn.getresponse()
     print "cosm response:",response.status, response.reason
