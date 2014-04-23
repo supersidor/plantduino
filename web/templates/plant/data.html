@@ -8,20 +8,18 @@
 </head>
 <body>
 
-<div data-role="page">
-  <form method="post" action="/">
-    {% csrf_token %}
-    <input type="hidden" name="turn_light" value="{% if turn_on_light %}1{% else %}0{% endif %}" />
-    <input type="submit" value="{% if turn_on_light %}Light ON{% else %}Light OFF{% endif %}">
-  </form>
+<div data-role="page"  style="width:auto">
   <div data-role="main" class="ui-content">
+      <img id="data" src="/graph/{{ sensor }}"/>
     <!-- data-count-theme="c"-->
-    <ul data-role="listview" data-count-theme="c">
+  <!--  <ul data-role="listview" data-count-theme="c">
       {% for sensor,value in sensors.items %}
-         <li><a href="/data/{{ sensor }}">{{ sensor }} <span class="ui-li-count">{{ value }}</span></a></li>
+         <li><a href="/graph/{{ sensor }}">{{ sensor }} <span class="ui-li-count">{{ value }}</span></a></li>
       {% endfor %}
     </ul>
+  -->
   </div>
+  <div class="slider"></div>
 </div> 
 
 </body>

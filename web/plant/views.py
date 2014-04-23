@@ -1,23 +1,23 @@
 from django.shortcuts import render
 from django.http import HttpResponse
-import xmlrpclib
+
 from django.template import RequestContext, loader
 import datetime
 from models import Sensor,Value
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import redirect
 import time
+from plant_proxy import Plant
+
 @login_required
 def index(request):
-    s = xmlrpclib.ServerProxy('http://127.0.0.1:8000')
-    
+    s = Plant().getProxy() 
     if request.method=='POST':
         state = request.POST['turn_light']
         if state=="1":
             s.setLight(True)
         else:
             s.setLight(False)
-#        time.sleep(1)
 
     template = loader.get_template('plant/index.html')
     d = s.getSensors()
@@ -56,3 +56,13 @@ def sensor(request):
     v = Value(sensor=obj,pub_date=time_p,value=float(value))
     v.save()
     return HttpResponse(str(obj.id)+":"+str(v.id))
+
+@login_required
+def data(request,sensor):
+    template = loader.get_template('plant/data.html')
+    context = RequestContext(request, {
+        'sensor': sensor,
+    })
+    return HttpResponse(template.render(context))
+
+
