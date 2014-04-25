@@ -8,6 +8,7 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import redirect
 import time
 from plant_proxy import Plant
+from tzlocal import get_localzone
 
 @login_required
 def index(request):
@@ -46,16 +47,36 @@ def sensor(request):
     sensor = request.GET.get('sensor', '')
     value = request.GET.get('value','')
     time = request.GET.get('time','')
-    time_p = datetime.datetime.fromtimestamp(int(time))
-    objs = Sensor.objects.filter(name=sensor)
-    if len(objs)>0:
-        obj = objs[0]
+    from django.utils.timezone import get_current_timezone
+    from django.utils import timezone
+    if (len(time)==0):
+        time_p = timezone.now()
     else:
-        obj = Sensor(name=sensor)
-        obj.save()
-    v = Value(sensor=obj,pub_date=time_p,value=float(value))
+        time_p = datetime.datetime.fromtimestamp(int(time),tz=get_current_timezone())
+    
+    objs = Sensor.objects.filter(name=sensor)
+    sensor = None
+    if len(objs)>0:
+        sensor = objs[0]
+    else:
+        sensor = Sensor(name=sensor)
+        sensor.save()
+
+    try:
+        latest = Value.objects.filter(sensor=sensor).order_by('-pub_date')[0]
+        #print "latest",str(latest)
+        if time_p<latest.pub_date:
+           print "WARNNING: Sensor time should be greater than last in DB"
+        if latest.value==float(value):
+            result = "No need to update data for sensor %s" % sensor
+            print result
+            HttpResponse(result)
+    except IndexError:
+        pass
+
+    v = Value(sensor=sensor,pub_date=time_p,value=float(value))
     v.save()
-    return HttpResponse(str(obj.id)+":"+str(v.id))
+    return HttpResponse(str(sensor.name)+":"+str(value))
 
 @login_required
 def data(request,sensor):

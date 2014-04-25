@@ -113,7 +113,7 @@ void illuminationUpdate(){
    //Serial.println("[lx]"); 
   }
 }
-const int startLightHour = 7;
+const int startLightHour = 6;
 const int stopLightHour = 22;
 
 boolean bLight = false;

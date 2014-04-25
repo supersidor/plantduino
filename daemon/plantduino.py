@@ -44,7 +44,7 @@ def sensorsLoop(plant):
 			sendToCosm(sensors)
 		except Exception as inst:
 			print inst			
- 		time.sleep(60)
+ 		time.sleep(120)
 def sendToCosm(sensors):
     headers = {"X-PachubeApiKey": "cvv0iZ8JCOr7bPZs9g3p6jXCqz2mg2tsjLfUw69hqo8",
             "Host": "www.pachube.com",
