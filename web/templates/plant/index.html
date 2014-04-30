@@ -41,16 +41,11 @@
 {% block content %}
 
 <div data-role="page">
-      <form method="POST" action="/" id="lightForm">
-        {% csrf_token %}
-         <input type="hidden" name="turn_light" value="{% if turn_on_light %}1{% else %}0{% endif %}" />
-        <button id="lightButton" type="submit"> {% if turn_on_light %}Light ON{% else %}Light OFF{% endif %}</button>
-      </form>
-      <form method="POST" action="/" id="waterForm" onsubmit="return confirm('Are you sure you want to submit?')">
-        {% csrf_token %}
-         <input type="hidden" name="turn_water" value="1" />
-         <button id="waterButton" type="submit">Water</button>
-      </form>
+          <form method="POST" action="/" id="lightForm">
+            {% csrf_token %}
+             <input type="hidden" name="turn_light" value="{% if turn_on_light %}1{% else %}0{% endif %}" />
+             <button id="lightButton" type="submit"> {% if turn_on_light %}Light ON{% else %}Light OFF{% endif %}</button>
+          </form>
   
   <div data-role="main" class="ui-content">
     <!-- data-count-theme="c"-->
@@ -60,7 +55,14 @@
       {% endfor %}
     </ul>
   </div>
+<form method="POST" action="/" id="waterForm" onsubmit="return confirm('Are you sure you want to water?')">
+  {% csrf_token %}
+   <input type="hidden" name="turn_water" value="1" />
+   <button id="waterButton" type="submit">Water</button>
+</form>
+  
 </div> 
+
 
 
 {% endblock %}
