@@ -1,19 +1,57 @@
-<!DOCTYPE html>
-<html>
-<head>
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<link rel="stylesheet" href="http://code.jquery.com/mobile/1.4.2/jquery.mobile-1.4.2.min.css">
-<script src="http://code.jquery.com/jquery-1.10.2.min.js"></script>
-<script src="http://code.jquery.com/mobile/1.4.2/jquery.mobile-1.4.2.min.js"></script>
-</head>
-<body>
+{% extends "base.html" %}
+
+{% block script %}
+    function confirmDialog(callback){
+       $('<div>').simpledialog2({
+          mode: 'button',
+          buttonPrompt: 'Are you sure?',
+          buttons : {
+            'Yes': {
+              click: function () { 
+                $('#buttonoutput').text('Yes');
+                callback(true);
+              }
+            },
+            'No': {
+              click: function () { 
+                $('#buttonoutput').text('No');
+                callback(false)
+              },
+              icon: "delete",
+              theme: "c"
+            }
+          }
+        })
+
+    }
+    $(document).on('pageinit', function() {
+      /*$("#waterForm").submit(function(e){
+          e.preventDefault();
+          var form = this;
+          confirmDialog(function(result){
+              if (result)
+                 form.submit(); // submit bypassing the jQuery bound event
+          });
+      });  */
+    });    
+    $(document).ready(function(){
+    });
+{% endblock %}
+
+{% block content %}
 
 <div data-role="page">
-  <form method="post" action="/">
-    {% csrf_token %}
-    <input type="hidden" name="turn_light" value="{% if turn_on_light %}1{% else %}0{% endif %}" />
-    <input type="submit" value="{% if turn_on_light %}Light ON{% else %}Light OFF{% endif %}">
-  </form>
+      <form method="POST" action="/" id="lightForm">
+        {% csrf_token %}
+         <input type="hidden" name="turn_light" value="{% if turn_on_light %}1{% else %}0{% endif %}" />
+        <button id="lightButton" type="submit"> {% if turn_on_light %}Light ON{% else %}Light OFF{% endif %}</button>
+      </form>
+      <form method="POST" action="/" id="waterForm" onsubmit="return confirm('Are you sure you want to submit?')">
+        {% csrf_token %}
+         <input type="hidden" name="turn_water" value="1" />
+         <button id="waterButton" type="submit">Water</button>
+      </form>
+  
   <div data-role="main" class="ui-content">
     <!-- data-count-theme="c"-->
     <ul data-role="listview" data-count-theme="c">
@@ -24,5 +62,5 @@
   </div>
 </div> 
 
-</body>
-</html>
+
+{% endblock %}

@@ -12,13 +12,16 @@ from tzlocal import get_localzone
 
 @login_required
 def index(request):
-    s = Plant().getProxy() 
+    s = Plant().getProxy()
     if request.method=='POST':
-        state = request.POST['turn_light']
-        if state=="1":
-            s.setLight(True)
-        else:
-            s.setLight(False)
+        if 'turn_light' in request.POST:
+            state = request.POST['turn_light']
+            if state=="1":
+                s.setLight(True)
+            else:
+                s.setLight(False)
+        if 'turn_water' in request.POST:
+            s.water()
 
     template = loader.get_template('plant/index.html')
     d = s.getSensors()
@@ -85,5 +88,26 @@ def data(request,sensor):
         'sensor': sensor,
     })
     return HttpResponse(template.render(context))
+@login_required
+def index2(request):
+    s = Plant().getProxy() 
+    if request.method=='POST':
+        state = request.POST['turn_light']
+        if state=="1":
+            s.setLight(True)
+        else:
+            s.setLight(False)
 
+    template = loader.get_template('plant/index2.html')
+    d = s.getSensors()
+    turn_on_light = False
+    if int(d['light'])==0:
+        turn_on_light = True
+
+    context = RequestContext(request, {
+        'sensors': d,
+        'turn_on_light': turn_on_light
+    })
+    
+    return HttpResponse(template.render(context))
 

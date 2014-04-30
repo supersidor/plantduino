@@ -1,26 +1,11 @@
-<!DOCTYPE html>
-<html>
-<head>
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<link rel="stylesheet" href="http://code.jquery.com/mobile/1.4.2/jquery.mobile-1.4.2.min.css">
-<script src="http://code.jquery.com/jquery-1.10.2.min.js"></script>
-<script src="http://code.jquery.com/mobile/1.4.2/jquery.mobile-1.4.2.min.js"></script>
-</head>
-<body>
+{% extends "base.html" %}
+
+{% block content %}
 
 <div data-role="page"  style="width:auto">
   <div data-role="main" class="ui-content">
       <img id="data" src="/graph/{{ sensor }}"/>
-    <!-- data-count-theme="c"-->
-  <!--  <ul data-role="listview" data-count-theme="c">
-      {% for sensor,value in sensors.items %}
-         <li><a href="/graph/{{ sensor }}">{{ sensor }} <span class="ui-li-count">{{ value }}</span></a></li>
-      {% endfor %}
-    </ul>
-  -->
   </div>
-  <div class="slider"></div>
 </div> 
 
-</body>
-</html>
+{% endblock %}
