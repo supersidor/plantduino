@@ -21,7 +21,9 @@ typedef struct
      CommandFuncPtr func;
 } command_type;
 
-
+// humidity
+int humidifierPIN = 9;
+int notUsedPIN = 10;
 //light 
 int lightPIN = 3;
 // pump
@@ -303,6 +305,16 @@ command_type commands[6] = {
 void setup() {
   Serial.begin(9600);
   Wire.begin();
+  //humidifier
+  pinMode(humidifierPIN,OUTPUT);
+  digitalWrite(humidifierPIN,HIGH);
+
+  //not used
+  pinMode(notUsedPIN,OUTPUT);
+  digitalWrite(notUsedPIN,HIGH);
+
+
+
   //light
   pinMode(lightPIN,OUTPUT);
   digitalWrite(lightPIN,HIGH);
