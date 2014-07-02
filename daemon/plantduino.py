@@ -13,37 +13,35 @@ import time
 
 def sendToDb(sensors):
 	ts = int(time.time())
-	try:
-		for sensor in sensors:
-			value = sensors[sensor]
-			conn = httplib.HTTPConnection("127.0.0.1:8081")
+	for sensor in sensors:
+		value = sensors[sensor]
+		conn = httplib.HTTPConnection("127.0.0.1:8081")
 
-			request = "/sensor?sensor=%s&value=%s&time=%d" % (sensor,value,ts)
-			#print request
-			conn.request("GET", request)
-			response = conn.getresponse()
+		request = "/sensor?sensor=%s&value=%s&time=%d" % (sensor,value,ts)
+		#print request
+		conn.request("GET", request)
+		response = conn.getresponse()
 
-			#print "django response:",response.status, response.reason
-			data = response.read()
+		#print "django response:",response.status, response.reason
+		data = response.read()
 
-			conn.getresponse
-			conn.close()
-	except Exception as inst:
-		print "sendToDb:",inst
-			
+		conn.getresponse
+		conn.close()
 
 def sensorsLoop(plant):
-
+	
 	while True:
 		sensors = plant.getSensors()
                 try:
                         sendToDb(sensors)
                 except Exception as inst:
                         print inst
+
 		try:
 			sendToCosm(sensors)
 		except Exception as inst:
 			print inst			
+
  		time.sleep(120)
 def sendToCosm(sensors):
     headers = {"X-PachubeApiKey": "cvv0iZ8JCOr7bPZs9g3p6jXCqz2mg2tsjLfUw69hqo8",

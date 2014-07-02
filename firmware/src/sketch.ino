@@ -1,3 +1,4 @@
+
 #include <OneWire.h>
 #include <dht.h>
 #include <DS1307RTC.h>
@@ -25,7 +26,7 @@ typedef struct
 int lightPIN = 3;
 // pump
 int pumpPIN = 4;
-int wateringTime = 5000;
+int wateringTime = 6000;
 
 int oneWirePIN = 2;
 float boardTemp = 0.0;
@@ -34,6 +35,19 @@ byte onBoardSensorAddress[] = {0x28,0xA4,0x8D,0xBE,0x03,0,0,0xD9};
 byte soilSensorAddress[] = {0x28,0x06,0xC5,0xA9,0x03,0,0,0x82};
 
 OneWire  dsOneWire(oneWirePIN);
+
+const int startLightHour = 6;
+const int stopLightHour = 20;
+
+boolean bLight = false;
+
+boolean bForceLight = false;
+boolean bForceLightState = false;
+boolean bExpectedState = false;
+
+const int waterHour = 20;
+int lastWateringDay = -1;
+
 
 void temperatureUpdate(){
    boardTemp = getTemperature(onBoardSensorAddress);
@@ -113,15 +127,20 @@ void illuminationUpdate(){
    //Serial.println("[lx]"); 
   }
 }
-const int startLightHour = 6;
-const int stopLightHour = 22;
+// defined later
+void water();
+void waterUpdate(){
+  //int day2 = day();
+  //Serial.print("day:");
+  //Serial.println(day2);
+  if (lastWateringDay==-1)
+    lastWateringDay = day();
+  if (day()!=lastWateringDay && hour()>=waterHour){
+      water();
+      lastWateringDay = day();
+  }
 
-boolean bLight = false;
-
-boolean bForceLight = false;
-boolean bForceLightState = false;
-boolean bExpectedState = false;
-
+}
 void lightUpdate(){
     //return;
 /*    
@@ -171,6 +190,8 @@ void moistureUpdate(){
   const int probeCount = 50;
   for (int i=0;i<probeCount;i++){
     int sensorValue = analogRead(moisturePIN);
+    //Serial.println(sensorValue);
+    //delay(500);
     iSum = iSum + sensorValue;
   }
   moisture = ((iSum/probeCount)/1024.0)*100.0;
@@ -188,7 +209,7 @@ void stateCommand(){
          serialSensor("force_light_state",bForceLightState?1:0); 
 	 serialSensor("soil_temp",soilTemp);
 	 serialSensor("soil_moisture",moisture);
-
+         serialSensor("last_water_day",lastWateringDay);
          Serial.println();
 }
 #define TIME_MSG_LEN  11   // time sync to PC is HEADER followed by unix time_t as ten ascii digits
@@ -250,19 +271,23 @@ void setResetLightCommand(){
       lightUpdate();
       Serial.println();
 }
-void waterCommand(){
+void water(){
   digitalWrite(pumpPIN,LOW);
   delay(wateringTime);
-  digitalWrite(pumpPIN,HIGH);  
+  digitalWrite(pumpPIN,HIGH);
+}
+void waterCommand(){
+  water();
   Serial.println();
 }
 
-interval_run_type interval_run[5] = {
+interval_run_type interval_run[6] = {
    {0,10000,temperatureUpdate},
    {0,10000,humidityUpdate},
    {0,5000,illuminationUpdate},
    {0,500,lightUpdate},
-   {0,20000,moistureUpdate}
+   {0,20000,moistureUpdate},
+   {0,1000,waterUpdate}
 };
 
 command_type commands[6] = {
