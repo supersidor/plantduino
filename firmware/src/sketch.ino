@@ -24,6 +24,12 @@ typedef struct
 // humidity
 int humidifierPIN = 9;
 int notUsedPIN = 10;
+boolean bHumidifier = false;
+
+boolean bForceHumidifier = false;
+boolean bForceHumidifierState = false;
+
+
 //light 
 int lightPIN = 3;
 // pump
@@ -45,7 +51,7 @@ boolean bLight = false;
 
 boolean bForceLight = false;
 boolean bForceLightState = false;
-boolean bExpectedState = false;
+
 
 const int waterHour = 20;
 int lastWateringDay = -1;
@@ -144,17 +150,9 @@ void waterUpdate(){
 
 }
 void lightUpdate(){
-    //return;
-/*    
-     Serial.println("lightUpdate");
-     Serial.print("bLight:");Serial.println(bLight);
-     Serial.print("bExpectedState:");Serial.println(bExpectedState);
-     Serial.print("bForceLight:");Serial.println(bForceLight);
-     Serial.print("bForceLightState:");Serial.println(bForceLightState);
-*/
+     static boolean bExpectedState = false;
      boolean bNewLight = false;
      boolean bNewExpectedState =  (hour()>=startLightHour && hour()<stopLightHour);
-     //Serial.print("2bNewExpectedState:");Serial.println(bNewExpectedState);
 
      if (bNewExpectedState!=bExpectedState){
          bForceLight = false;
@@ -163,11 +161,6 @@ void lightUpdate(){
      }else{
         bNewLight = bExpectedState;
      }
-     /*Serial.print("3bLight:");Serial.println(bLight);
-     Serial.print("3bExpectedState:");Serial.println(bExpectedState);
-     Serial.print("3bForceLight:");Serial.println(bForceLight);
-     Serial.print("3bForceLightState:");Serial.println(bForceLightState);
-     */
 
 
      if (bForceLight){
@@ -177,8 +170,6 @@ void lightUpdate(){
         bLight = bNewLight;
         digitalWrite(lightPIN,bLight?LOW:HIGH);
      }
-     //Serial.print("4bLight:");Serial.println(bLight);
-
 }
 int moisturePIN =  A0;
 int mositureVoltagePin = 8;
@@ -202,6 +193,7 @@ void moistureUpdate(){
 }
 // commands
 void stateCommand(){
+
          serialSensor("air_temp",temperature);
 	 serialSensor("temp_board",boardTemp);
          serialSensor("humidity",humidity); 
@@ -212,6 +204,8 @@ void stateCommand(){
 	 serialSensor("soil_temp",soilTemp);
 	 serialSensor("soil_moisture",moisture);
          serialSensor("last_water_day",lastWateringDay);
+         serialSensor("humidifier",bHumidifier?1:0);
+
          Serial.println();
 }
 #define TIME_MSG_LEN  11   // time sync to PC is HEADER followed by unix time_t as ten ascii digits
@@ -282,14 +276,38 @@ void waterCommand(){
   water();
   Serial.println();
 }
+void humidifierUpdate(){
+  boolean bNewHumidifier = false;
+  boolean bNewExpectedState =  (hour()>=startLightHour && hour()<stopLightHour) && (minute()>=0 && minute()<30);
+  static boolean bExpectedState = false;
 
-interval_run_type interval_run[6] = {
+  if (bNewExpectedState!=bExpectedState){
+    bForceHumidifier = false;
+    bForceHumidifierState = false;
+    bNewHumidifier = bExpectedState = bNewExpectedState;
+  }else{
+    bNewHumidifier = bExpectedState;
+  }
+
+  if (bForceHumidifier){
+    bNewHumidifier = bForceHumidifierState;
+  }
+  if (bNewHumidifier!=bHumidifier){
+    bHumidifier = bNewHumidifier;
+    digitalWrite(humidifierPIN,bHumidifier?LOW:HIGH);
+  }
+
+
+
+}
+interval_run_type interval_run[7] = {
    {0,10000,temperatureUpdate},
    {0,10000,humidityUpdate},
    {0,5000,illuminationUpdate},
    {0,500,lightUpdate},
    {0,20000,moistureUpdate},
-   {0,1000,waterUpdate}
+   {0,1000,waterUpdate},
+   {0,1000,humidifierUpdate}
 };
 
 command_type commands[6] = {

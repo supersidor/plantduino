@@ -29,7 +29,6 @@ def sendToDb(sensors):
 		conn.close()
 
 def sensorsLoop(plant):
-	
 	while True:
 		sensors = plant.getSensors()
                 try:
