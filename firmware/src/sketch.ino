@@ -277,7 +277,7 @@ void waterCommand(){
   Serial.println();
 }
 void humidifierUpdate(){
-  boolean bNewHumidifier = false;
+  /*  boolean bNewHumidifier = false;
   boolean bNewExpectedState =  (hour()>=startLightHour && hour()<stopLightHour) && (minute()>=0 && minute()<30);
   static boolean bExpectedState = false;
 
@@ -296,7 +296,9 @@ void humidifierUpdate(){
     bHumidifier = bNewHumidifier;
     digitalWrite(humidifierPIN,bHumidifier?LOW:HIGH);
   }
-
+  */
+  bHumidifier = (hour()>=startLightHour && hour()<stopLightHour) && (minute()>=0 && minute()<30);
+  digitalWrite(humidifierPIN,bHumidifier?LOW:HIGH);
 
 
 }
