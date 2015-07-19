@@ -15,7 +15,7 @@ def sendToDb(sensors):
 	ts = int(time.time())
 	for sensor in sensors:
 		value = sensors[sensor]
-		conn = httplib.HTTPConnection("127.0.0.1:8081")
+		conn = httplib.HTTPConnection("127.0.0.1")
 
 		request = "/sensor?sensor=%s&value=%s&time=%d" % (sensor,value,ts)
 		#print request
@@ -32,16 +32,17 @@ def sensorsLoop(plant):
 	while True:
 		sensors = plant.getSensors()
                 try:
+			print "arduino time:"+plant.getTime().strftime('%Y-%m-%d %H:%M:%S')
                         sendToDb(sensors)
                 except Exception as inst:
-                        print inst
+                        print inst#
+#		try:
+#			
+#			sendToCosm(sensors)
+#		except Exception as inst:
+#			print inst			
 
-		try:
-			sendToCosm(sensors)
-		except Exception as inst:
-			print inst			
-
- 		time.sleep(120)
+ 		time.sleep(5*60)
 def sendToCosm(sensors):
     headers = {"X-PachubeApiKey": "cvv0iZ8JCOr7bPZs9g3p6jXCqz2mg2tsjLfUw69hqo8",
             "Host": "www.pachube.com",
@@ -127,6 +128,7 @@ print "Server started"
 print "time:"+plant.getTime().strftime('%Y-%m-%d %H:%M:%S')
 #time.sleep(5)
 #plant.resetLight()
+plant.syncTime()
 print plant.getSensors()
 
 thread = Thread(target = sensorsLoop, args = (plant, ))

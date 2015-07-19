@@ -34,7 +34,7 @@ boolean bForceHumidifierState = false;
 int lightPIN = 3;
 // pump
 int pumpPIN = 4;
-int wateringTime = 6000;
+int wateringTime = 20000;
 
 int oneWirePIN = 2;
 float boardTemp = 0.0;
@@ -44,8 +44,8 @@ byte soilSensorAddress[] = {0x28,0x06,0xC5,0xA9,0x03,0,0,0x82};
 
 OneWire  dsOneWire(oneWirePIN);
 
-const int startLightHour = 6;
-const int stopLightHour = 20;
+const int startLightHour = 9;
+const int stopLightHour = 22;
 
 boolean bLight = false;
 
@@ -302,14 +302,14 @@ void humidifierUpdate(){
 
 
 }
-interval_run_type interval_run[7] = {
+interval_run_type interval_run[6] = {
    {0,10000,temperatureUpdate},
    {0,10000,humidityUpdate},
    {0,5000,illuminationUpdate},
    {0,500,lightUpdate},
    {0,20000,moistureUpdate},
-   {0,1000,waterUpdate},
-   {0,1000,humidifierUpdate}
+   {0,1000,waterUpdate}//,
+   //   {0,1000,humidifierUpdate}
 };
 
 command_type commands[6] = {

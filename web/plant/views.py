@@ -10,7 +10,7 @@ import time
 from plant_proxy import Plant
 from tzlocal import get_localzone
 
-@login_required
+#@login_required
 def index(request):
     s = Plant().getProxy()
     if request.method=='POST':
@@ -36,7 +36,7 @@ def index(request):
     
     return HttpResponse(template.render(context))
 
-@login_required
+#@login_required
 def light(request):
     state = request.POST['turn_light']
     s = xmlrpclib.ServerProxy('http://127.0.0.1:8000')
@@ -47,7 +47,7 @@ def light(request):
     return redirect("/")
 
 def sensor(request):
-    sensor = request.GET.get('sensor', '')
+    sensor_name = request.GET.get('sensor', '')
     value = request.GET.get('value','')
     time = request.GET.get('time','')
     from django.utils.timezone import get_current_timezone
@@ -56,13 +56,16 @@ def sensor(request):
         time_p = timezone.now()
     else:
         time_p = datetime.datetime.fromtimestamp(int(time),tz=get_current_timezone())
+
+    print time_p
     
-    objs = Sensor.objects.filter(name=sensor)
+    objs = Sensor.objects.filter(name=sensor_name)
     sensor = None
     if len(objs)>0:
         sensor = objs[0]
     else:
-        sensor = Sensor(name=sensor)
+        sensor = Sensor()
+        sensor.name=sensor_name
         sensor.save()
 
     try:
@@ -81,14 +84,14 @@ def sensor(request):
     v.save()
     return HttpResponse(str(sensor.name)+":"+str(value))
 
-@login_required
+#@login_required
 def data(request,sensor):
     template = loader.get_template('plant/data.html')
     context = RequestContext(request, {
         'sensor': sensor,
     })
     return HttpResponse(template.render(context))
-@login_required
+#@login_required
 def index2(request):
     s = Plant().getProxy() 
     if request.method=='POST':
