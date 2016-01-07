@@ -1,4 +1,3 @@
-
 #include <OneWire.h>
 #include <dht.h>
 #include <DS1307RTC.h>
@@ -34,7 +33,11 @@ boolean bForceHumidifierState = false;
 int lightPIN = 3;
 // pump
 int pumpPIN = 4;
-int wateringTime = 20000;
+const int wateringTime = 14000;
+const int waterHour = 22;
+const int waterMinute = 0;
+
+boolean watered = false;
 
 int oneWirePIN = 2;
 float boardTemp = 0.0;
@@ -53,8 +56,12 @@ boolean bForceLight = false;
 boolean bForceLightState = false;
 
 
-const int waterHour = 20;
-int lastWateringDay = -1;
+void log(const char* message){
+  Serial.print("!LOG!");
+  Serial.print(message);
+  Serial.println();
+}
+
 
 
 void temperatureUpdate(){
@@ -137,15 +144,17 @@ void illuminationUpdate(){
 }
 // defined later
 void water();
+
 void waterUpdate(){
-  //int day2 = day();
-  //Serial.print("day:");
-  //Serial.println(day2);
-  if (lastWateringDay==-1)
-    lastWateringDay = day();
-  if (day()!=lastWateringDay && hour()>=waterHour){
-      water();
-      lastWateringDay = day();
+  int hour1 = hour();
+  int minute1 = minute();
+  if (hour1==waterHour  && (minute1>=waterMinute && minute1<=waterMinute+10)){
+      if (!watered){
+	 water();
+	 watered = true;
+      }
+  }else{
+     watered = false;
   }
 
 }
@@ -191,20 +200,43 @@ void moistureUpdate(){
   digitalWrite(mositureVoltagePin,LOW);
 
 }
-// commands
-void stateCommand(){
+////
+int moisturePIN2 =  A1;
+int mositureVoltagePin2 = 11;
+float moisture2 = 0.0;
 
+void moistureUpdate2(){
+  digitalWrite(mositureVoltagePin2,HIGH);
+  delay(500);
+  analogRead(moisturePIN2);
+  float iSum = 0;
+  const int probeCount = 50;
+  for (int i=0;i<probeCount;i++){
+    int sensorValue = analogRead(moisturePIN2);
+    //Serial.println(sensorValue);
+    //delay(500);
+    iSum = iSum + sensorValue;
+  }
+  moisture2 = ((iSum/probeCount)/1024.0)*100.0;
+  digitalWrite(mositureVoltagePin2,LOW);
+
+}
+
+
+void stateCommand(){
          serialSensor("air_temp",temperature);
 	 serialSensor("temp_board",boardTemp);
          serialSensor("humidity",humidity); 
          serialSensor("illumination",illumination); 
+	 log("light data is going to be posted");
          serialSensor("light",bLight?1:0); 
          serialSensor("force_light",bForceLight?1:0); 
          serialSensor("force_light_state",bForceLightState?1:0); 
 	 serialSensor("soil_temp",soilTemp);
 	 serialSensor("soil_moisture",moisture);
-         serialSensor("last_water_day",lastWateringDay);
+	 serialSensor("soil_moisture_ground",moisture2);
          serialSensor("humidifier",bHumidifier?1:0);
+	 serialSensor("watered",watered?1:0);
 
          Serial.println();
 }
@@ -260,6 +292,7 @@ void setLightCommand(){
       bForceLight = true;
       bForceLightState = (strcmp(light_state,"1")==0);
       lightUpdate();
+      log("setLightCommand was called");
       Serial.println();
 }
 void setResetLightCommand(){
@@ -302,12 +335,13 @@ void humidifierUpdate(){
 
 
 }
-interval_run_type interval_run[6] = {
+interval_run_type interval_run[7] = {
    {0,10000,temperatureUpdate},
    {0,10000,humidityUpdate},
    {0,5000,illuminationUpdate},
    {0,500,lightUpdate},
    {0,20000,moistureUpdate},
+   {0,20000,moistureUpdate2},
    {0,1000,waterUpdate}//,
    //   {0,1000,humidifierUpdate}
 };
@@ -333,8 +367,6 @@ void setup() {
   pinMode(notUsedPIN,OUTPUT);
   digitalWrite(notUsedPIN,HIGH);
 
-
-
   //light
   pinMode(lightPIN,OUTPUT);
   digitalWrite(lightPIN,HIGH);
@@ -350,6 +382,9 @@ void setup() {
   pinMode(mositureVoltagePin,OUTPUT);
   digitalWrite(mositureVoltagePin,LOW);
  
+  //moisture2
+  pinMode(mositureVoltagePin2,OUTPUT);
+  digitalWrite(mositureVoltagePin2,LOW);
 
   Serial.println("Arduino initialized");
 }
@@ -388,8 +423,8 @@ void loop(){
 
         }
    }
-
-
+   //if (second()%10==0)
+   //  log("loop log message");
 
 
 

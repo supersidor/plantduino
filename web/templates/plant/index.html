@@ -41,26 +41,32 @@
 {% block content %}
 
 <div data-role="page">
+          <form>
+	    {% autoescape off %} {{status }} {% endautoescape %}
+	  </form>
+	  {% if connected %}
           <form method="POST" action="/" id="lightForm">
             {% csrf_token %}
              <input type="hidden" name="turn_light" value="{% if turn_on_light %}1{% else %}0{% endif %}" />
              <button id="lightButton" type="submit"> {% if turn_on_light %}Light ON{% else %}Light OFF{% endif %}</button>
           </form>
+	  <form method="POST" action="/" id="waterForm" onsubmit="return confirm('Are you sure you want to water?')">
+	    {% csrf_token %}
+	    <input type="hidden" name="turn_water" value="1" />
+	    <button id="waterButton" type="submit">Water</button>
+	  </form>
+	  {% endif %}
   
-  <div data-role="main" class="ui-content">
-    <!-- data-count-theme="c"-->
-    <ul data-role="listview" data-count-theme="c">
-      {% for sensor,value in sensors.items %}
-         <li><a href="/data/{{ sensor }}">{{ sensor }} <span class="ui-li-count">{{ value }}</span></a></li>
-      {% endfor %}
-    </ul>
-  </div>
-<form method="POST" action="/" id="waterForm" onsubmit="return confirm('Are you sure you want to water?')">
-  {% csrf_token %}
-   <input type="hidden" name="turn_water" value="1" />
-   <button id="waterButton" type="submit">Water</button>
-</form>
-  
+	  <div data-role="main" class="ui-content">
+	    <!-- data-count-theme="c"-->
+	    <ul data-role="listview" data-count-theme="c">
+	      <li data-role="list-divider">sensors</li>
+	      {% for sensor,value in sensors.items %}
+              <li><a href="/data/{{ sensor }}">{{ sensor }} <span class="ui-li-count">{{ value }}</span></a></li>
+	      {% endfor %}
+	    </ul>
+	  </div>
+
 </div> 
 
 

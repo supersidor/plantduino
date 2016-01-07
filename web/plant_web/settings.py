@@ -58,6 +58,16 @@ WSGI_APPLICATION = 'plant_web.wsgi.application'
 
 DATABASES = {
     'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': os.path.join(BASE_DIR, 'palnt.db'),
+        'USER': '',
+        'PASSWORD': '',
+        'HOST': '',
+        'PORT': ''
+    }
+
+}
+"""    'default': {
         'ENGINE': 'django.db.backends.postgresql_psycopg2',
         'NAME': 'plant',
         'USER': 'plant',
@@ -65,7 +75,7 @@ DATABASES = {
         'HOST': 'localhost',
         'PORT': ''
     }
-}
+"""
 
 # Internationalization
 # https://docs.djangoproject.com/en/1.6/topics/i18n/

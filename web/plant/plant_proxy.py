@@ -19,6 +19,6 @@ class Plant:
 		if os.getenv('DUMB_PLANT', 'FALSE')=='TRUE':
 			return DumbPlant()
 		else:
-			return xmlrpclib.ServerProxy('http://127.0.0.1:8000')
+			return xmlrpclib.ServerProxy('http://127.0.0.1:8888',use_datetime=True)
 
 

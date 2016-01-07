@@ -9,6 +9,7 @@ from django.shortcuts import redirect
 import time
 from plant_proxy import Plant
 from tzlocal import get_localzone
+from django.utils import timezone
 
 #@login_required
 def index(request):
@@ -24,14 +25,39 @@ def index(request):
             s.water()
 
     template = loader.get_template('plant/index.html')
-    d = s.getSensors()
+
+    data = {}
     turn_on_light = False
-    if int(d['light'])==0:
-        turn_on_light = True
+    time = None
+    connected = False
+    try:
+        data = s.getSensors()
+        time = s.getTime()
+        connected = True
+        if int(data['light'])==0:
+            turn_on_light = True
+        
+    except Exception as inst:
+        print inst
+
+
+    if len(data)==0:
+        sensors = Sensor.objects.all();
+        for s in sensors:
+            latest = Value.objects.filter(sensor=s).order_by('-pub_date')[0]
+            data[s.name] = latest.value
+    last_connected = Value.objects.all().order_by('-pub_date')[0].pub_date
+    last_connected =  timezone.localtime(last_connected)
+    status = "Arduino state: "+ ('Connected' if connected else 'Disconnected')
+    status = status + "<br>Last connected: "+last_connected.strftime('%B %d, %H:%M:%S')
+
+    #time.strftime('%B %d, %H:%M:%S')
 
     context = RequestContext(request, {
-        'sensors': d,
-        'turn_on_light': turn_on_light
+        'sensors': data,
+        'turn_on_light': turn_on_light,
+        'status': status ,
+        'connected': connected
     })
     
     return HttpResponse(template.render(context))
